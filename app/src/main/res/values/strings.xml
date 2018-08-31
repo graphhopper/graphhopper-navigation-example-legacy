@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">GH Nav Sample</string>
+
+    <string name="title_navigation_launcher">Navigation Sample</string>
+    <string name="description_navigation_launcher">Showing basic navigation with multiple waypoints</string>
+
+    <string name="settings">Settings</string>
+    <string name="simulate_route">Simulate Route</string>
+    <string name="language">Language</string>
+    <string name="unit_type">Unit Type</string>
+    <string name="route_profile">Route Profile</string>
+
+    <string name="unit_type_key" translatable="false">unit_type</string>
+    <string name="simulate_route_key" translatable="false">simulate_route</string>
+    <string name="language_key" translatable="false">language</string>
+    <string name="route_profile_key" translatable="false">route_profile</string>
+    <string name="default_locale" translatable="false">default_for_device</string>
+    <string name="default_unit_type" translatable="false">default_for_device</string>
+    <string name="current_night_mode" translatable="false">current_night_mode</string>
+
+    <string name="error_route_not_available">Current route is not available</string>
+    <string name="error_select_longer_route">Please select a longer route</string>
+    <string name="error_valid_route_not_found">Valid route not found.</string>
+    <string name="error_calculating_route">There was an error calculating the route</string>
+    <string name="explanation_long_press_waypoint">Long press map to place waypoint</string>
+</resources>

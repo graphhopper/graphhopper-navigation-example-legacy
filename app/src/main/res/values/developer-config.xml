@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="mapbox_access_token">YOUR_KEY</string>
+    <string name="base_url">YOUR_BASE_URL</string>
+</resources>
