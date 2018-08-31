@@ -8,3 +8,12 @@ The app is designed to work with the [GraphHopper Navigation](https://github.com
 ## Getting started
 
 In order to try this app, please enter your credentials in `app/src/main/res/values/developer-config.xml`.
+
+## Updating the developer-config file
+
+```
+Ignore:
+git update-index --assume-unchanged app/src/main/res/values/developer-config.xml
+Unignore:
+git update-index --no-assume-unchanged app/src/main/res/values/developer-config.xml
+```
