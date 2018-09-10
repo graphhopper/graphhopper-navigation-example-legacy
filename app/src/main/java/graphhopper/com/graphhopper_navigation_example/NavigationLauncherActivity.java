@@ -86,7 +86,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private List<Point> waypoints = new ArrayList<>();
     private DirectionsRoute route;
     private LocaleUtils localeUtils;
-    private String profile = DirectionsCriteria.PROFILE_DRIVING_TRAFFIC;
 
     private boolean locationFound;
 
@@ -96,6 +95,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         Mapbox.getInstance(this.getApplicationContext(), getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_navigation_launcher);
         ButterKnife.bind(this);
+        mapView.setStyleUrl(getString(R.string.map_view_styleUrl));
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         localeUtils = new LocaleUtils();
@@ -209,7 +209,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         launchRouteBtn.setEnabled(false);
         waypoints.clear();
         mapRoute.removeRoute();
-        currentMarker.remove();
+        if (currentMarker != null)
+            currentMarker.remove();
     }
 
     @Override
