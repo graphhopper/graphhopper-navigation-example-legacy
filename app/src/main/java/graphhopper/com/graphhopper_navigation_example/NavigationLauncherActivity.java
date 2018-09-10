@@ -215,6 +215,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     public void onMapReady(MapboxMap mapboxMap) {
         this.mapboxMap = mapboxMap;
+        this.mapboxMap.getUiSettings().setAttributionDialogManager(new GHAttributionDialogManager(this.mapView.getContext(), this.mapboxMap));
         this.mapboxMap.setOnMapLongClickListener(this);
         initLocationEngine();
         initLocationLayer();
