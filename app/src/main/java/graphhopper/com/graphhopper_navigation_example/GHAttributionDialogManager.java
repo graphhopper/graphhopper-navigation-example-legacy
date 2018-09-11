@@ -76,7 +76,7 @@ public class GHAttributionDialogManager extends AttributionDialogManager {
 
         private Set<Attribution> build() {
             List<String> attributions = new ArrayList<>();
-            attributions.add("<a href=\"https://www.graphhopper.com/\" target=\"_blank\">&copy; GraphHopper</a>");
+            attributions.add("<a href=\"https://www.graphhopper.com/\" target=\"_blank\">Powered by GraphHopper API</a>");
             for (Source source : mapboxMap.getSources()) {
                 attributions.add(source.getAttribution());
             }
@@ -85,7 +85,6 @@ public class GHAttributionDialogManager extends AttributionDialogManager {
                     .withCopyrightSign(true)
                     // TODO when using Mapbox as Tilesource we should keep this, should we automatically remove it otherwise?
                     .withImproveMap(true)
-                    .withTelemetryAttribution(true)
                     .withAttributionData(attributions.toArray(new String[attributions.size()]))
                     .build().getAttributions();
         }

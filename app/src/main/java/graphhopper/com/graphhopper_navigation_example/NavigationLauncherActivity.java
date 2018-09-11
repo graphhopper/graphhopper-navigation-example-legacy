@@ -37,6 +37,7 @@ import com.mapbox.mapboxsdk.geometry.LatLngBounds;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
+import com.mapbox.mapboxsdk.maps.Telemetry;
 import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
 import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
@@ -93,6 +94,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Telemetry.disableOnUserRequest();
         Mapbox.getInstance(this.getApplicationContext(), getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_navigation_launcher);
         ButterKnife.bind(this);
