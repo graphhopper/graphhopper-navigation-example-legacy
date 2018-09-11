@@ -94,8 +94,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Telemetry.disableOnUserRequest();
         Mapbox.getInstance(this.getApplicationContext(), getString(R.string.mapbox_access_token));
+        Telemetry.disableOnUserRequest();
         setContentView(R.layout.activity_navigation_launcher);
         ButterKnife.bind(this);
         mapView.onCreate(savedInstanceState);

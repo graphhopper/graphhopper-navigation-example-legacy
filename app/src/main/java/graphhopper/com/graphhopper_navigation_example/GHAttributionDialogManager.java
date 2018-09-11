@@ -2,10 +2,15 @@ package graphhopper.com.graphhopper_navigation_example;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 
 import com.mapbox.mapboxsdk.attribution.Attribution;
 import com.mapbox.mapboxsdk.attribution.AttributionParser;
@@ -50,6 +55,30 @@ public class GHAttributionDialogManager extends AttributionDialogManager {
         }
     }
 
+    // Called when someone selects an attribution or telemetry settings from the dialog
+    @Override
+    public void onClick(DialogInterface dialog, int which) {
+        showMapFeedbackWebPage(which);
+    }
+
+    private void showMapFeedbackWebPage(int which) {
+        Attribution[] attributions = attributionSet.toArray(new Attribution[attributionSet.size()]);
+        String url = attributions[which].getUrl();
+        showWebPage(url);
+    }
+
+    private void showWebPage(@NonNull String url) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setData(Uri.parse(url));
+            context.startActivity(intent);
+        } catch (ActivityNotFoundException exception) {
+            // explicitly handling if the device hasn't have a web browser installed. #8899
+            Toast.makeText(context, R.string.error_no_browser_installed, Toast.LENGTH_LONG).show();
+        }
+    }
+
+
     protected void showAttributionDialog(String[] attributionTitles) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         builder.setTitle(R.string.app_name);
@@ -76,7 +105,7 @@ public class GHAttributionDialogManager extends AttributionDialogManager {
 
         private Set<Attribution> build() {
             List<String> attributions = new ArrayList<>();
-            attributions.add("<a href=\"https://www.graphhopper.com/\" target=\"_blank\">Powered by GraphHopper API</a>");
+            attributions.add("<a href=\"https://www.graphhopper.com/\" target=\"_blank\">&copy; GraphHopper API</a>");
             for (Source source : mapboxMap.getSources()) {
                 attributions.add(source.getAttribution());
             }
