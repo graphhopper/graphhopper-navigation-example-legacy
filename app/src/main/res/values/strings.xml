@@ -1,5 +1,5 @@
-<resources>
-    <string name="app_name">GH Nav Sample</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" tools:override="true">GraphHopper Demo</string>
 
     <string name="title_navigation_launcher">Navigation Sample</string>
     <string name="description_navigation_launcher">Showing basic navigation with multiple waypoints</string>
@@ -22,5 +22,6 @@
     <string name="error_select_longer_route">Please select a longer route</string>
     <string name="error_valid_route_not_found">Valid route not found.</string>
     <string name="error_calculating_route">There was an error calculating the route</string>
+    <string name="error_no_browser_installed">No browser installed</string>
     <string name="explanation_long_press_waypoint">Long press map to place waypoint</string>
 </resources>
