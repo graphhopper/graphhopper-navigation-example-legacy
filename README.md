@@ -4,7 +4,7 @@ This application provides navigation based on instructions returned from the [Gr
 
 ## Serverless
 
-It is possible to create your navigation experience without any server component. Then you'll need to sign up at the [GraphHopper Directions API](https://www.graphhopper.com/products/) and at [MapTiler](https://www.maptiler.com/cloud/) or compatible vector tile API providers.
+It is possible to create your navigation Android app without any server component. You'll need to sign up at the [GraphHopper Directions API](https://www.graphhopper.com/products/) and at [MapTiler](https://www.maptiler.com/cloud/) or compatible vector tile API providers and enter the API keys in the configuration (see below).
 
 ## License
 
