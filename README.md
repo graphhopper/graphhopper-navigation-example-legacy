@@ -3,7 +3,7 @@
 This is an Android app based on the [Mapbox Sample App](https://github.com/mapbox/mapbox-navigation-android/tree/master/app),
 which is licensed under [MIT](https://github.com/mapbox/mapbox-navigation-android/blob/master/LICENSE).
 
-The app is designed to work with the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper-navigation) component.
+The app is designed to work with the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper-navigation) component and makes it possible to easily create navigation applications using the [GraphHopper Directions API](https://www.graphhopper.com/products/).
 
 ## Getting started
 
