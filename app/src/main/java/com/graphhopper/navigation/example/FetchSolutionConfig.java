@@ -1,4 +1,4 @@
-package graphhopper.com.graphhopper_navigation_example;
+package com.graphhopper.navigation.example;
 
 public class FetchSolutionConfig {
 

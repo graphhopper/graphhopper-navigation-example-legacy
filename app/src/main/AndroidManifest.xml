@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="graphhopper.com.graphhopper_navigation_example">
+    package="com.graphhopper.navigation.example">
 
     <application
         android:allowBackup="true"
@@ -9,7 +9,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity">
+        <activity android:name="com.graphhopper.navigation.example.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -18,19 +18,19 @@
         </activity>
 
         <activity
-            android:name=".NavigationLauncherActivity"
+            android:name="com.graphhopper.navigation.example.NavigationLauncherActivity"
             android:label="">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".MainActivity" />
+                android:value="com.graphhopper.navigation.example.MainActivity" />
         </activity>
 
         <activity
-            android:name=".NavigationViewSettingsActivity"
+            android:name="com.graphhopper.navigation.example.NavigationViewSettingsActivity"
             android:label="@string/settings">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value=".NavigationLauncherActivity" />
+                android:value="com.graphhopper.navigation.example.NavigationLauncherActivity" />
         </activity>
     </application>
 

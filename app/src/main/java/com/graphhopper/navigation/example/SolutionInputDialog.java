@@ -1,4 +1,4 @@
-package graphhopper.com.graphhopper_navigation_example;
+package com.graphhopper.navigation.example;
 
 import android.app.Activity;
 import android.app.AlertDialog;
