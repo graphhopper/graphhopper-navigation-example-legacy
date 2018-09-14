@@ -1,5 +1,6 @@
 package graphhopper.com.graphhopper_navigation_example;
 
+import android.app.DialogFragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
@@ -12,8 +13,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.FrameLayout;
+import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -53,14 +53,13 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 import retrofit2.Call;
 import retrofit2.Response;
 
 import static com.mapbox.android.core.location.LocationEnginePriority.HIGH_ACCURACY;
 
 public class NavigationLauncherActivity extends AppCompatActivity implements OnMapReadyCallback,
-        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener {
+        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener, SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface {
 
     private static final int CAMERA_ANIMATION_DURATION = 1000;
     private static final int DEFAULT_CAMERA_ZOOM = 16;
@@ -73,14 +72,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     @BindView(R.id.mapView)
     MapView mapView;
-    @BindView(R.id.launch_route_btn)
-    Button launchRouteBtn;
-    @BindView(R.id.reset_route_btn)
-    Button resetRouteBtn;
     @BindView(R.id.loading)
     ProgressBar loading;
-    @BindView(R.id.launch_btn_frame)
-    FrameLayout launchBtnFrame;
 
     private Marker currentMarker;
     private Point currentLocation;
@@ -115,6 +108,15 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         switch (item.getItemId()) {
             case R.id.settings:
                 showSettings();
+                return true;
+            case R.id.navigate_btn:
+                launchNavigationWithRoute();
+                return true;
+            case R.id.reset_route_btn:
+                clearRoute();
+                return true;
+            case R.id.fetch_solution_btn:
+                showSolutionInputDialog();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -201,16 +203,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         mapView.onSaveInstanceState(outState);
     }
 
-    @OnClick(R.id.launch_route_btn)
-    public void onRouteLaunchClick() {
-        launchNavigationWithRoute();
-    }
-
-    @OnClick(R.id.reset_route_btn)
-    public void onResetRouteClick() {
-        launchRouteBtn.setEnabled(false);
+    public void clearRoute() {
         waypoints.clear();
         mapRoute.removeRoute();
+        route = null;
         if (currentMarker != null)
             currentMarker.remove();
     }
@@ -228,12 +224,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     public void onMapLongClick(@NonNull LatLng point) {
         waypoints.add(Point.fromLngLat(point.getLongitude(), point.getLatitude()));
-        launchRouteBtn.setEnabled(false);
-        loading.setVisibility(View.VISIBLE);
-        setCurrentMarkerPosition(point);
-        if (currentLocation != null) {
-            fetchRoute();
-        }
+        updateRouteAfterWaypointChange();
     }
 
     @SuppressWarnings({"MissingPermission"})
@@ -282,7 +273,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     private void fetchRoute() {
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
-                .accessToken(Mapbox.getAccessToken())
+                .accessToken("pk." + getString(R.string.gh_key))
                 .baseUrl(getString(R.string.base_url))
                 .origin(currentLocation)
                 .alternatives(true);
@@ -304,7 +295,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                     hideLoading();
                     route = response.body().routes().get(0);
                     if (route.distance() > 25d) {
-                        launchRouteBtn.setEnabled(true);
                         mapRoute.addRoutes(response.body().routes());
                         boundCameraToRoute();
                     } else {
@@ -316,7 +306,22 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 }
             }
         });
-        loading.setVisibility(View.VISIBLE);
+        showLoading();
+    }
+
+    public void updateRouteAfterWaypointChange() {
+        if (this.waypoints.isEmpty()) {
+            hideLoading();
+        } else {
+            Point lastPoint = this.waypoints.get(this.waypoints.size() - 1);
+            LatLng latLng = new LatLng(lastPoint.latitude(), lastPoint.longitude());
+            setCurrentMarkerPosition(latLng);
+            if (currentLocation != null) {
+                fetchRoute();
+            } else {
+                hideLoading();
+            }
+        }
     }
 
     private void setFieldsFromSharedPreferences(NavigationRoute.Builder builder) {
@@ -391,6 +396,12 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
     }
 
+    private void showLoading() {
+        if (loading.getVisibility() == View.INVISIBLE) {
+            loading.setVisibility(View.VISIBLE);
+        }
+    }
+
     private void onLocationFound(Location location) {
         if (!locationFound) {
             animateCamera(new LatLng(location.getLatitude(), location.getLongitude()));
@@ -412,8 +423,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 try {
                     LatLngBounds bounds = new LatLngBounds.Builder().includes(bboxPoints).build();
                     // left, top, right, bottom
-                    int topPadding = launchBtnFrame.getHeight() * 2;
-                    animateCameraBbox(bounds, CAMERA_ANIMATION_DURATION, new int[]{50, topPadding, 50, 100});
+                    animateCameraBbox(bounds, CAMERA_ANIMATION_DURATION, new int[]{50, 50, 50, 50});
                 } catch (InvalidLatLngBoundsException exception) {
                     Toast.makeText(this, R.string.error_valid_route_not_found, Toast.LENGTH_SHORT).show();
                 }
@@ -441,4 +451,39 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             }
         }
     }
+
+    private void updateWaypoints(List<Point> points) {
+        clearRoute();
+        this.waypoints = points;
+        updateRouteAfterWaypointChange();
+    }
+
+    public void showSolutionInputDialog() {
+        // Create an instance of the dialog fragment and show it
+        DialogFragment dialog = new SolutionInputDialog();
+        dialog.show(getFragmentManager(), "gh-example");
+    }
+
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) {
+        EditText jobId = dialog.getDialog().findViewById(R.id.job_id);
+        EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
+
+        String jobIdString = jobId.getText().toString();
+        String vehicleIdString = vehicleId.getText().toString();
+
+        showLoading();
+        new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(jobIdString, vehicleIdString));
+    }
+
+    @Override
+    public void onError(int message) {
+        Snackbar.make(mapView, message, Snackbar.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPostExecute(List<Point> points) {
+        updateWaypoints(points);
+    }
+
 }
