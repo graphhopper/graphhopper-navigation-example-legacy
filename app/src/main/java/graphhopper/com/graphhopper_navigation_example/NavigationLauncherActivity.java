@@ -453,6 +453,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     }
 
     private void updateWaypoints(List<Point> points) {
+        if (points.size() > 24) {
+            onError(R.string.error_too_many_waypoints);
+            return;
+        }
         clearRoute();
         this.waypoints = points;
         updateRouteAfterWaypointChange();

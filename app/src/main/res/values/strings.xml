@@ -29,6 +29,7 @@
     <string name="error_calculating_route">There was an error calculating the route</string>
     <string name="error_fetching_solution">There was an error fetching the solution</string>
     <string name="error_vehicle_not_found">Vehicle not found</string>
+    <string name="error_too_many_waypoints">A route cannot have more than 25 waypoints</string>
     <string name="error_no_browser_installed">No browser installed</string>
     <string name="explanation_long_press_waypoint">Long press map to place waypoint</string>
     <string name="launch_navigation">Launch Navigation</string>
