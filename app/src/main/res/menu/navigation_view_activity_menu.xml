@@ -1,9 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/navigate_btn"
+        android:icon="@drawable/ic_navigation_black_24dp"
+        android:title="@string/launch_navigation"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/fetch_solution_btn"
+        android:icon="@drawable/ic_cloud_download_black_24dp"
+        android:title="@string/fetch_solution"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/reset_route_btn"
+        android:icon="@drawable/ic_cancel_black_24dp"
+        android:title="@string/reset_route"
+        app:showAsAction="always" />
+
     <item
         android:id="@+id/settings"
-        android:icon="@drawable/ic_settings"
+        android:icon="@drawable/ic_settings_applications_black_24dp"
         android:title="@string/settings"
         app:showAsAction="always" />
+
 </menu>
