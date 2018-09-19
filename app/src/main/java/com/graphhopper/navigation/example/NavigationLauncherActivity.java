@@ -272,6 +272,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     }
 
     private void fetchRoute() {
+        showLoading();
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
                 .accessToken("pk." + getString(R.string.gh_key))
                 .baseUrl(getString(R.string.base_url))
@@ -292,7 +293,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             @Override
             public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
                 if (validRouteResponse(response)) {
-                    hideLoading();
                     route = response.body().routes().get(0);
                     if (route.distance() > 25d) {
                         mapRoute.addRoutes(response.body().routes());
@@ -302,11 +302,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                     }
                 } else {
                     Snackbar.make(mapView, R.string.error_calculating_route, Snackbar.LENGTH_LONG).show();
-                    hideLoading();
                 }
+                hideLoading();
             }
         });
-        showLoading();
     }
 
     public void updateRouteAfterWaypointChange() {
@@ -328,7 +327,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         builder
                 .language(getLanguageFromSharedPreferences())
                 .voiceUnits(getUnitTypeFromSharedPreferences())
-                .profile(getProfileFromSharedPreferences());
+                .profile(getRouteProfileFromSharedPreferences());
     }
 
     private String getUnitTypeFromSharedPreferences() {
@@ -353,12 +352,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
     }
 
-    private String getProfileFromSharedPreferences() {
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        String profile = sharedPreferences.getString(getString(R.string.route_profile_key), DirectionsCriteria.PROFILE_DRIVING_TRAFFIC);
-        return profile;
-    }
-
     private boolean getShouldSimulateRouteFromSharedPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         return sharedPreferences.getBoolean(getString(R.string.simulate_route_key), false);
@@ -367,7 +360,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private String getRouteProfileFromSharedPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         return sharedPreferences.getString(
-                getString(R.string.route_profile_key), DirectionsCriteria.PROFILE_DRIVING_TRAFFIC
+                getString(R.string.route_profile_key), DirectionsCriteria.PROFILE_DRIVING
         );
     }
 
