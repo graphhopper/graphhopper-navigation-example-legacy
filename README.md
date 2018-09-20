@@ -13,10 +13,6 @@ This project stands under the Apache License.
 It was originally based on the [Mapbox Sample App](https://github.com/mapbox/mapbox-navigation-android/tree/master/app),
 which is licensed under the [MIT](https://github.com/mapbox/mapbox-navigation-android/blob/master/LICENSE) license.
 
-## Screenshots
-
-![screenshots of demo](https://www.graphhopper.com/wp-content/uploads/2018/09/overview-screenshots-1024x585.png)
-
 ## Getting started
 
 In order to try this app, please enter your credentials in `app/src/main/res/values/developer-config.xml`.
