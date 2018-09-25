@@ -34,12 +34,12 @@ import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.exceptions.InvalidLatLngBoundsException;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.location.LocationComponent;
+import com.mapbox.mapboxsdk.location.modes.RenderMode;
 import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Telemetry;
-import com.mapbox.mapboxsdk.plugins.locationlayer.LocationLayerPlugin;
-import com.mapbox.mapboxsdk.plugins.locationlayer.modes.RenderMode;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncher;
 import com.mapbox.services.android.navigation.ui.v5.NavigationLauncherOptions;
 import com.mapbox.services.android.navigation.ui.v5.route.NavigationMapRoute;
@@ -65,7 +65,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private static final int DEFAULT_CAMERA_ZOOM = 16;
     private static final int CHANGE_SETTING_REQUEST_CODE = 1;
 
-    private LocationLayerPlugin locationLayer;
     private LocationEngine locationEngine;
     private NavigationMapRoute mapRoute;
     private MapboxMap mapboxMap;
@@ -77,6 +76,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     private Marker currentMarker;
     private Point currentLocation;
+    private double currentBearing;
+    private boolean hasBearing = false;
     private List<Point> waypoints = new ArrayList<>();
     private DirectionsRoute route;
     private LocaleUtils localeUtils;
@@ -140,14 +141,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
     }
 
-    @SuppressWarnings({"MissingPermission"})
     @Override
     protected void onStart() {
         super.onStart();
         mapView.onStart();
-        if (locationLayer != null) {
-            locationLayer.onStart();
-        }
     }
 
     @SuppressWarnings({"MissingPermission"})
@@ -182,9 +179,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     protected void onStop() {
         super.onStop();
         mapView.onStop();
-        if (locationLayer != null) {
-            locationLayer.onStop();
-        }
     }
 
     @Override
@@ -215,9 +209,9 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     public void onMapReady(MapboxMap mapboxMap) {
         this.mapboxMap = mapboxMap;
         this.mapboxMap.getUiSettings().setAttributionDialogManager(new GHAttributionDialogManager(this.mapView.getContext(), this.mapboxMap));
-        this.mapboxMap.setOnMapLongClickListener(this);
+        this.mapboxMap.addOnMapLongClickListener(this);
         initLocationEngine();
-        initLocationLayer();
+        initializeLocationComponent();
         initMapRoute();
     }
 
@@ -236,6 +230,12 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = Point.fromLngLat(location.getLongitude(), location.getLatitude());
+        if (location.hasBearing()) {
+            currentBearing = location.getBearing();
+            hasBearing = true;
+        } else {
+            hasBearing = false;
+        }
         onLocationFound(location);
     }
 
@@ -261,9 +261,11 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     }
 
     @SuppressWarnings({"MissingPermission"})
-    private void initLocationLayer() {
-        locationLayer = new LocationLayerPlugin(mapView, mapboxMap, locationEngine);
-        locationLayer.setRenderMode(RenderMode.COMPASS);
+    private void initializeLocationComponent() {
+        LocationComponent locationComponent = mapboxMap.getLocationComponent();
+        locationComponent.activateLocationComponent(this, locationEngine);
+        locationComponent.setLocationComponentEnabled(true);
+        locationComponent.setRenderMode(RenderMode.COMPASS);
     }
 
     private void initMapRoute() {
@@ -276,8 +278,13 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
                 .accessToken("pk." + getString(R.string.gh_key))
                 .baseUrl(getString(R.string.base_url))
-                .origin(currentLocation)
                 .alternatives(true);
+
+        if (hasBearing)
+            // 90 seems to be the default tolerance of the SDK
+            builder.origin(currentLocation, currentBearing, 90.0);
+        else
+            builder.origin(currentLocation);
 
         for (int i = 0; i < waypoints.size(); i++) {
             Point p = waypoints.get(i);
@@ -372,7 +379,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
         NavigationLauncherOptions.Builder optionsBuilder = NavigationLauncherOptions.builder()
                 .shouldSimulateRoute(getShouldSimulateRouteFromSharedPreferences())
-                .directionsProfile(getRouteProfileFromSharedPreferences());
+                .directionsProfile(getRouteProfileFromSharedPreferences())
+                .waynameChipEnabled(false);
 
         optionsBuilder.directionsRoute(route);
 
