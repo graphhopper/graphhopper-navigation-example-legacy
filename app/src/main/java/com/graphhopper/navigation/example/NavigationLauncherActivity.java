@@ -77,6 +77,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     private Marker currentMarker;
     private Point currentLocation;
+    private double currentBearing;
+    private boolean hasBearing = false;
     private List<Point> waypoints = new ArrayList<>();
     private DirectionsRoute route;
     private LocaleUtils localeUtils;
@@ -236,6 +238,12 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     public void onLocationChanged(Location location) {
         currentLocation = Point.fromLngLat(location.getLongitude(), location.getLatitude());
+        if (location.hasBearing()) {
+            currentBearing = location.getBearing();
+            hasBearing = true;
+        } else {
+            hasBearing = false;
+        }
         onLocationFound(location);
     }
 
@@ -276,8 +284,13 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
                 .accessToken("pk." + getString(R.string.gh_key))
                 .baseUrl(getString(R.string.base_url))
-                .origin(currentLocation)
                 .alternatives(true);
+
+        if (hasBearing)
+            // 90 seems to be the default tolerance of the SDK
+            builder.origin(currentLocation, currentBearing, 90.0);
+        else
+            builder.origin(currentLocation);
 
         for (int i = 0; i < waypoints.size(); i++) {
             Point p = waypoints.get(i);
@@ -372,7 +385,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
         NavigationLauncherOptions.Builder optionsBuilder = NavigationLauncherOptions.builder()
                 .shouldSimulateRoute(getShouldSimulateRouteFromSharedPreferences())
-                .directionsProfile(getRouteProfileFromSharedPreferences());
+                .directionsProfile(getRouteProfileFromSharedPreferences())
+                .waynameChipEnabled(false);
 
         optionsBuilder.directionsRoute(route);
 
