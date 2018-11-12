@@ -284,6 +284,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
                 .accessToken("pk." + getString(R.string.gh_key))
                 .baseUrl(getString(R.string.base_url))
+                .user("gh")
                 .alternatives(true);
 
         if (hasBearing)
