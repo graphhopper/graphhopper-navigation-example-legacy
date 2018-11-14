@@ -219,6 +219,17 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         route = null;
         if (currentMarker != null)
             currentMarker.remove();
+
+        clearGeocodingResults();
+    }
+
+    public void clearGeocodingResults() {
+        if (markers != null) {
+            for (Marker marker : markers) {
+                marker.remove();
+            }
+            markers.clear();
+        }
     }
 
     @Override
@@ -525,11 +536,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     @Override
     public void onPostExecuteGeocodingSearch(List<GeocodingLocation> locations) {
-        if (markers != null) {
-            for (Marker marker : markers) {
-                marker.remove();
-            }
-        }
+        clearGeocodingResults();
         markers = new ArrayList<>(locations.size());
         for (GeocodingLocation location : locations) {
             GeocodingPoint point = location.getPoint();
