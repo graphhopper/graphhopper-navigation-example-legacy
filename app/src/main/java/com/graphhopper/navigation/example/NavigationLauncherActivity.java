@@ -90,6 +90,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     private boolean locationFound;
 
+    final int[] padding = new int[]{50, 50, 50, 50};
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -240,11 +242,30 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         initLocationEngine();
         initLocationLayer();
         initMapRoute();
+
+        this.mapboxMap.setOnInfoWindowLongClickListener(new MapboxMap.OnInfoWindowLongClickListener() {
+            @Override
+            public void onInfoWindowLongClick(@NonNull Marker marker) {
+                for (Marker geocodingMarker : markers) {
+                    if (geocodingMarker.getId() == marker.getId()) {
+                        LatLng position = geocodingMarker.getPosition();
+                        addPointToRoute(position.getLatitude(), position.getLongitude());
+                        marker.hideInfoWindow();
+                        return;
+                    }
+                }
+            }
+        });
+
     }
 
     @Override
     public void onMapLongClick(@NonNull LatLng point) {
-        waypoints.add(Point.fromLngLat(point.getLongitude(), point.getLatitude()));
+        addPointToRoute(point.getLatitude(), point.getLongitude());
+    }
+
+    private void addPointToRoute(double lat, double lng) {
+        waypoints.add(Point.fromLngLat(lng, lat));
         updateRouteAfterWaypointChange();
     }
 
@@ -450,7 +471,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 try {
                     LatLngBounds bounds = new LatLngBounds.Builder().includes(bboxPoints).build();
                     // left, top, right, bottom
-                    animateCameraBbox(bounds, CAMERA_ANIMATION_DURATION, new int[]{50, 50, 50, 50});
+                    animateCameraBbox(bounds, CAMERA_ANIMATION_DURATION, padding);
                 } catch (InvalidLatLngBoundsException exception) {
                     Toast.makeText(this, R.string.error_valid_route_not_found, Toast.LENGTH_SHORT).show();
                 }
@@ -538,10 +559,22 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     public void onPostExecuteGeocodingSearch(List<GeocodingLocation> locations) {
         clearGeocodingResults();
         markers = new ArrayList<>(locations.size());
+
+        if (locations.isEmpty()) {
+            onError(R.string.error_geocoding_no_location);
+            return;
+        }
+
+        //List<LatLng> bounds = new ArrayList<>();
+        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+        boundsBuilder.include(new LatLng(currentLocation.latitude(), currentLocation.longitude()));
+
         for (GeocodingLocation location : locations) {
             GeocodingPoint point = location.getPoint();
             MarkerOptions markerOptions = new MarkerOptions();
-            markerOptions.position(new LatLng(point.getLat(), point.getLng()));
+            LatLng latLng = new LatLng(point.getLat(), point.getLng());
+            markerOptions.position(latLng);
+            boundsBuilder.include(latLng);
             markerOptions.title(location.getName());
             String snippet = "";
             if (location.getStreet() != null) {
@@ -564,11 +597,14 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 if (location.getOsmType() != null)
                     snippet += "OSM-Type: " + location.getOsmType() + "\n";
             }
+            snippet += "\n\n Long press on info window\n to add point to route";
             if (!snippet.isEmpty())
                 markerOptions.snippet(snippet);
             markerOptions.icon(IconFactory.getInstance(this.getApplicationContext()).fromResource(R.drawable.ic_map_marker));
             markers.add(mapboxMap.addMarker(markerOptions));
         }
+
+        animateCameraBbox(boundsBuilder.build(), CAMERA_ANIMATION_DURATION, padding);
         hideLoading();
     }
 
