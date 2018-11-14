@@ -17,6 +17,8 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.graphhopper.directions.api.client.model.GeocodingLocation;
+import com.graphhopper.directions.api.client.model.GeocodingPoint;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -27,7 +29,9 @@ import com.mapbox.core.constants.Constants;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -59,7 +63,7 @@ import retrofit2.Response;
 import static com.mapbox.android.core.location.LocationEnginePriority.HIGH_ACCURACY;
 
 public class NavigationLauncherActivity extends AppCompatActivity implements OnMapReadyCallback,
-        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener, SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface {
+        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener, SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface, FetchGeocodingTaskCallbackInterface, GeocodingInputDialog.NoticeDialogListener {
 
     private static final int CAMERA_ANIMATION_DURATION = 1000;
     private static final int DEFAULT_CAMERA_ZOOM = 16;
@@ -76,6 +80,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     ProgressBar loading;
 
     private Marker currentMarker;
+    List<Marker> markers;
     private Point currentLocation;
     private double currentBearing;
     private boolean hasBearing = false;
@@ -119,6 +124,9 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 return true;
             case R.id.fetch_solution_btn:
                 showSolutionInputDialog();
+                return true;
+            case R.id.geocoding_search_btn:
+                showGeocodingInputDialog();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -284,6 +292,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
                 .accessToken("pk." + getString(R.string.gh_key))
                 .baseUrl(getString(R.string.base_url))
+                .user("gh")
                 .alternatives(true);
 
         if (hasBearing)
@@ -475,21 +484,85 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         dialog.show(getFragmentManager(), "gh-example");
     }
 
+    public void showGeocodingInputDialog() {
+        // Create an instance of the dialog fragment and show it
+        DialogFragment dialog = new GeocodingInputDialog();
+        dialog.show(getFragmentManager(), "gh-example");
+    }
+
     @Override
     public void onDialogPositiveClick(DialogFragment dialog) {
         EditText jobId = dialog.getDialog().findViewById(R.id.job_id);
-        EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
+        // Check if it's a solution fetch
+        if (jobId != null) {
+            EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
 
-        String jobIdString = jobId.getText().toString();
-        String vehicleIdString = vehicleId.getText().toString();
+            String jobIdString = jobId.getText().toString();
+            String vehicleIdString = vehicleId.getText().toString();
 
-        showLoading();
-        new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(jobIdString, vehicleIdString));
+            showLoading();
+            new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(jobIdString, vehicleIdString));
+        }
+        // Check if it's a geocoding search
+        EditText search = dialog.getDialog().findViewById(R.id.search_input_id);
+        if (search != null) {
+            String searchString = search.getText().toString();
+
+            showLoading();
+            String point = null;
+            LatLng pointLatLng = this.mapboxMap.getCameraPosition().target;
+            if (pointLatLng != null)
+                point = pointLatLng.getLatitude() + "," + pointLatLng.getLongitude();
+            new FetchGeocodingTask(this, getString(R.string.gh_key)).execute(new FetchGeocodingConfig(searchString, getLanguageFromSharedPreferences().getLanguage(), 5, false, point, "default"));
+        }
+
     }
 
     @Override
     public void onError(int message) {
         Snackbar.make(mapView, message, Snackbar.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPostExecuteGeocodingSearch(List<GeocodingLocation> locations) {
+        if (markers != null) {
+            for (Marker marker : markers) {
+                marker.remove();
+            }
+        }
+        markers = new ArrayList<>(locations.size());
+        for (GeocodingLocation location : locations) {
+            GeocodingPoint point = location.getPoint();
+            MarkerOptions markerOptions = new MarkerOptions();
+            markerOptions.position(new LatLng(point.getLat(), point.getLng()));
+            markerOptions.title(location.getName());
+            String snippet = "";
+            if (location.getStreet() != null) {
+                snippet += location.getStreet();
+                if (location.getHousenumber() != null)
+                    snippet += " " + location.getHousenumber();
+                snippet += "\n";
+            }
+            if (location.getCity() != null) {
+                if (location.getPostcode() != null)
+                    snippet += location.getPostcode() + " ";
+                snippet += location.getCity() + "\n";
+            }
+            if (location.getCountry() != null)
+                snippet += location.getCountry() + "\n";
+            if (location.getOsmId() != null) {
+                snippet += "OSM-Id: " + location.getOsmId() + "\n";
+                if (location.getOsmKey() != null)
+                    snippet += "OSM-Key: " + location.getOsmKey() + "\n";
+                if (location.getOsmType() != null)
+                    snippet += "OSM-Type: " + location.getOsmType() + "\n";
+            }
+            if (!snippet.isEmpty())
+                markerOptions.snippet(snippet);
+            markerOptions.icon(IconFactory.getInstance(this.getApplicationContext()).fromResource(R.drawable.ic_map_marker));
+            markers.add(mapboxMap.addMarker(markerOptions));
+        }
+        hideLoading();
     }
 
     @Override
