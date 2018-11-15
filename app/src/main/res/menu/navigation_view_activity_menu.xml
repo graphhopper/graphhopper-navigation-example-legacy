@@ -9,6 +9,12 @@
         app:showAsAction="always" />
 
     <item
+        android:id="@+id/geocoding_search_btn"
+        android:icon="@drawable/ic_search_black_24dp"
+        android:title="@string/geocoding_search"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/fetch_solution_btn"
         android:icon="@drawable/ic_cloud_download_black_24dp"
         android:title="@string/fetch_solution"

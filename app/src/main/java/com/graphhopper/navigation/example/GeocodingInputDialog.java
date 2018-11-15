@@ -10,17 +10,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
 
-public class SolutionInputDialog extends DialogFragment {
+public class GeocodingInputDialog extends DialogFragment {
 
-    private String jobId = "";
-    private String vehicleId = "";
+    private String geocodingInput = "";
 
-    public void setVehicleId(String vehicleId) {
-        this.vehicleId = vehicleId;
-    }
-
-    public void setJobId(String jobId) {
-        this.jobId = jobId;
+    public void setGeocodingInput(String geocodingInput) {
+        this.geocodingInput = geocodingInput;
     }
 
     public interface NoticeDialogListener {
@@ -49,16 +44,11 @@ public class SolutionInputDialog extends DialogFragment {
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
 
-        View modifiedView = inflater.inflate(R.layout.solution_input, null);
-        if (!jobId.isEmpty()) {
-            EditText jobIdEditText = (EditText) modifiedView.findViewById(R.id.job_id);
-            jobIdEditText.setText(jobId);
+        View modifiedView = inflater.inflate(R.layout.geocoding_input, null);
+        if (!geocodingInput.isEmpty()) {
+            EditText jobIdEditText = (EditText) modifiedView.findViewById(R.id.geocoding_input_id);
+            jobIdEditText.setText(geocodingInput);
         }
-        if (!vehicleId.isEmpty()) {
-            EditText vehicleIdEditText = (EditText) modifiedView.findViewById(R.id.vehicle_id);
-            vehicleIdEditText.setText(vehicleId);
-        }
-
 
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
@@ -67,15 +57,14 @@ public class SolutionInputDialog extends DialogFragment {
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int id) {
-                        mListener.onDialogPositiveClick(SolutionInputDialog.this);
+                        mListener.onDialogPositiveClick(GeocodingInputDialog.this);
                     }
                 })
                 .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        SolutionInputDialog.this.getDialog().cancel();
+                        GeocodingInputDialog.this.getDialog().cancel();
                     }
                 });
-
         return builder.create();
     }
 

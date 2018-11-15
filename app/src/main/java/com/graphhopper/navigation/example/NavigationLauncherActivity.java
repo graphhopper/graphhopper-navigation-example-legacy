@@ -17,6 +17,8 @@ import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.graphhopper.directions.api.client.model.GeocodingLocation;
+import com.graphhopper.directions.api.client.model.GeocodingPoint;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -27,7 +29,9 @@ import com.mapbox.core.constants.Constants;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -59,7 +63,7 @@ import retrofit2.Response;
 import static com.mapbox.android.core.location.LocationEnginePriority.HIGH_ACCURACY;
 
 public class NavigationLauncherActivity extends AppCompatActivity implements OnMapReadyCallback,
-        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener, SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface {
+        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener, SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface, FetchGeocodingTaskCallbackInterface, GeocodingInputDialog.NoticeDialogListener {
 
     private static final int CAMERA_ANIMATION_DURATION = 1000;
     private static final int DEFAULT_CAMERA_ZOOM = 16;
@@ -76,6 +80,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     ProgressBar loading;
 
     private Marker currentMarker;
+    List<Marker> markers;
     private Point currentLocation;
     private double currentBearing;
     private boolean hasBearing = false;
@@ -84,6 +89,12 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private LocaleUtils localeUtils;
 
     private boolean locationFound;
+
+    final int[] padding = new int[]{50, 50, 50, 50};
+
+    private String currentJobId = "";
+    private String currentVehicleId = "";
+    private String currentGeocodingInput = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -119,6 +130,9 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 return true;
             case R.id.fetch_solution_btn:
                 showSolutionInputDialog();
+                return true;
+            case R.id.geocoding_search_btn:
+                showGeocodingInputDialog();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -211,6 +225,17 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         route = null;
         if (currentMarker != null)
             currentMarker.remove();
+
+        clearGeocodingResults();
+    }
+
+    public void clearGeocodingResults() {
+        if (markers != null) {
+            for (Marker marker : markers) {
+                marker.remove();
+            }
+            markers.clear();
+        }
     }
 
     @Override
@@ -221,11 +246,31 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         initLocationEngine();
         initLocationLayer();
         initMapRoute();
+
+        this.mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
+            @Override
+            public boolean onInfoWindowClick(@NonNull Marker marker) {
+                for (Marker geocodingMarker : markers) {
+                    if (geocodingMarker.getId() == marker.getId()) {
+                        LatLng position = geocodingMarker.getPosition();
+                        addPointToRoute(position.getLatitude(), position.getLongitude());
+                        marker.hideInfoWindow();
+                        return true;
+                    }
+                }
+                return true;
+            }
+        });
+
     }
 
     @Override
     public void onMapLongClick(@NonNull LatLng point) {
-        waypoints.add(Point.fromLngLat(point.getLongitude(), point.getLatitude()));
+        addPointToRoute(point.getLatitude(), point.getLongitude());
+    }
+
+    private void addPointToRoute(double lat, double lng) {
+        waypoints.add(Point.fromLngLat(lng, lat));
         updateRouteAfterWaypointChange();
     }
 
@@ -431,7 +476,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 try {
                     LatLngBounds bounds = new LatLngBounds.Builder().includes(bboxPoints).build();
                     // left, top, right, bottom
-                    animateCameraBbox(bounds, CAMERA_ANIMATION_DURATION, new int[]{50, 50, 50, 50});
+                    animateCameraBbox(bounds, CAMERA_ANIMATION_DURATION, padding);
                 } catch (InvalidLatLngBoundsException exception) {
                     Toast.makeText(this, R.string.error_valid_route_not_found, Toast.LENGTH_SHORT).show();
                 }
@@ -472,25 +517,103 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     public void showSolutionInputDialog() {
         // Create an instance of the dialog fragment and show it
-        DialogFragment dialog = new SolutionInputDialog();
+        SolutionInputDialog dialog = new SolutionInputDialog();
+        dialog.setJobId(currentJobId);
+        dialog.setVehicleId(currentVehicleId);
+        dialog.show(getFragmentManager(), "gh-example");
+    }
+
+    public void showGeocodingInputDialog() {
+        // Create an instance of the dialog fragment and show it
+        GeocodingInputDialog dialog = new GeocodingInputDialog();
+        dialog.setGeocodingInput(currentGeocodingInput);
         dialog.show(getFragmentManager(), "gh-example");
     }
 
     @Override
     public void onDialogPositiveClick(DialogFragment dialog) {
         EditText jobId = dialog.getDialog().findViewById(R.id.job_id);
-        EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
+        // Check if it's a solution fetch
+        if (jobId != null) {
+            EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
 
-        String jobIdString = jobId.getText().toString();
-        String vehicleIdString = vehicleId.getText().toString();
+            currentJobId = jobId.getText().toString();
+            currentVehicleId = vehicleId.getText().toString();
 
-        showLoading();
-        new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(jobIdString, vehicleIdString));
+            showLoading();
+            new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(currentJobId, currentVehicleId));
+        }
+        // Check if it's a geocoding search
+        EditText search = dialog.getDialog().findViewById(R.id.geocoding_input_id);
+        if (search != null) {
+            currentGeocodingInput = search.getText().toString();
+
+            showLoading();
+            String point = null;
+            LatLng pointLatLng = this.mapboxMap.getCameraPosition().target;
+            if (pointLatLng != null)
+                point = pointLatLng.getLatitude() + "," + pointLatLng.getLongitude();
+            new FetchGeocodingTask(this, getString(R.string.gh_key)).execute(new FetchGeocodingConfig(currentGeocodingInput, getLanguageFromSharedPreferences().getLanguage(), 5, false, point, "default"));
+        }
+
     }
 
     @Override
     public void onError(int message) {
         Snackbar.make(mapView, message, Snackbar.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPostExecuteGeocodingSearch(List<GeocodingLocation> locations) {
+        clearGeocodingResults();
+        markers = new ArrayList<>(locations.size());
+
+        if (locations.isEmpty()) {
+            onError(R.string.error_geocoding_no_location);
+            return;
+        }
+
+        //List<LatLng> bounds = new ArrayList<>();
+        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+        boundsBuilder.include(new LatLng(currentLocation.latitude(), currentLocation.longitude()));
+
+        for (GeocodingLocation location : locations) {
+            GeocodingPoint point = location.getPoint();
+            MarkerOptions markerOptions = new MarkerOptions();
+            LatLng latLng = new LatLng(point.getLat(), point.getLng());
+            markerOptions.position(latLng);
+            boundsBuilder.include(latLng);
+            markerOptions.title(location.getName());
+            String snippet = "";
+            if (location.getStreet() != null) {
+                snippet += location.getStreet();
+                if (location.getHousenumber() != null)
+                    snippet += " " + location.getHousenumber();
+                snippet += "\n";
+            }
+            if (location.getCity() != null) {
+                if (location.getPostcode() != null)
+                    snippet += location.getPostcode() + " ";
+                snippet += location.getCity() + "\n";
+            }
+            if (location.getCountry() != null)
+                snippet += location.getCountry() + "\n";
+            if (location.getOsmId() != null) {
+                snippet += "OSM-Id: " + location.getOsmId() + "\n";
+                if (location.getOsmKey() != null)
+                    snippet += "OSM-Key: " + location.getOsmKey() + "\n";
+                if (location.getOsmType() != null)
+                    snippet += "OSM-Type: " + location.getOsmType() + "\n";
+            }
+            snippet += "\n\n Long press on info window\n to add point to route";
+            if (!snippet.isEmpty())
+                markerOptions.snippet(snippet);
+            markerOptions.icon(IconFactory.getInstance(this.getApplicationContext()).fromResource(R.drawable.ic_map_marker));
+            markers.add(mapboxMap.addMarker(markerOptions));
+        }
+
+        animateCameraBbox(boundsBuilder.build(), CAMERA_ANIMATION_DURATION, padding);
+        hideLoading();
     }
 
     @Override
