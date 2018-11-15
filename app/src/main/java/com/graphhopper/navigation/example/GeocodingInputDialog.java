@@ -7,8 +7,16 @@ import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 
 public class GeocodingInputDialog extends DialogFragment {
+
+    private String geocodingInput = "";
+
+    public void setGeocodingInput(String geocodingInput) {
+        this.geocodingInput = geocodingInput;
+    }
 
     public interface NoticeDialogListener {
         public void onDialogPositiveClick(DialogFragment dialog);
@@ -36,9 +44,15 @@ public class GeocodingInputDialog extends DialogFragment {
         // Get the layout inflater
         LayoutInflater inflater = getActivity().getLayoutInflater();
 
+        View modifiedView = inflater.inflate(R.layout.geocoding_input, null);
+        if (!geocodingInput.isEmpty()) {
+            EditText jobIdEditText = (EditText) modifiedView.findViewById(R.id.geocoding_input_id);
+            jobIdEditText.setText(geocodingInput);
+        }
+
         // Inflate and set the layout for the dialog
         // Pass null as the parent view because its going in the dialog layout
-        builder.setView(inflater.inflate(R.layout.geocoding_input, null))
+        builder.setView(modifiedView)
                 // Add action buttons
                 .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override

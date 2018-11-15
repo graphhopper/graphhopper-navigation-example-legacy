@@ -92,6 +92,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     final int[] padding = new int[]{50, 50, 50, 50};
 
+    private String currentJobId = "";
+    private String currentVehicleId = "";
+    private String currentGeocodingInput = "";
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -243,17 +247,18 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         initLocationLayer();
         initMapRoute();
 
-        this.mapboxMap.setOnInfoWindowLongClickListener(new MapboxMap.OnInfoWindowLongClickListener() {
+        this.mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
             @Override
-            public void onInfoWindowLongClick(@NonNull Marker marker) {
+            public boolean onInfoWindowClick(@NonNull Marker marker) {
                 for (Marker geocodingMarker : markers) {
                     if (geocodingMarker.getId() == marker.getId()) {
                         LatLng position = geocodingMarker.getPosition();
                         addPointToRoute(position.getLatitude(), position.getLongitude());
                         marker.hideInfoWindow();
-                        return;
+                        return true;
                     }
                 }
+                return true;
             }
         });
 
@@ -512,13 +517,16 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     public void showSolutionInputDialog() {
         // Create an instance of the dialog fragment and show it
-        DialogFragment dialog = new SolutionInputDialog();
+        SolutionInputDialog dialog = new SolutionInputDialog();
+        dialog.setJobId(currentJobId);
+        dialog.setVehicleId(currentVehicleId);
         dialog.show(getFragmentManager(), "gh-example");
     }
 
     public void showGeocodingInputDialog() {
         // Create an instance of the dialog fragment and show it
-        DialogFragment dialog = new GeocodingInputDialog();
+        GeocodingInputDialog dialog = new GeocodingInputDialog();
+        dialog.setGeocodingInput(currentGeocodingInput);
         dialog.show(getFragmentManager(), "gh-example");
     }
 
@@ -529,23 +537,23 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         if (jobId != null) {
             EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
 
-            String jobIdString = jobId.getText().toString();
-            String vehicleIdString = vehicleId.getText().toString();
+            currentJobId = jobId.getText().toString();
+            currentVehicleId = vehicleId.getText().toString();
 
             showLoading();
-            new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(jobIdString, vehicleIdString));
+            new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(currentJobId, currentVehicleId));
         }
         // Check if it's a geocoding search
-        EditText search = dialog.getDialog().findViewById(R.id.search_input_id);
+        EditText search = dialog.getDialog().findViewById(R.id.geocoding_input_id);
         if (search != null) {
-            String searchString = search.getText().toString();
+            currentGeocodingInput = search.getText().toString();
 
             showLoading();
             String point = null;
             LatLng pointLatLng = this.mapboxMap.getCameraPosition().target;
             if (pointLatLng != null)
                 point = pointLatLng.getLatitude() + "," + pointLatLng.getLongitude();
-            new FetchGeocodingTask(this, getString(R.string.gh_key)).execute(new FetchGeocodingConfig(searchString, getLanguageFromSharedPreferences().getLanguage(), 5, false, point, "default"));
+            new FetchGeocodingTask(this, getString(R.string.gh_key)).execute(new FetchGeocodingConfig(currentGeocodingInput, getLanguageFromSharedPreferences().getLanguage(), 5, false, point, "default"));
         }
 
     }
