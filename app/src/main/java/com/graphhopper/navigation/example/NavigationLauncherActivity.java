@@ -22,6 +22,8 @@ import com.graphhopper.directions.api.client.model.GeocodingPoint;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineListener;
 import com.mapbox.android.core.location.LocationEngineProvider;
+import com.mapbox.android.core.permissions.PermissionsListener;
+import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.api.directions.v5.DirectionsCriteria;
 import com.mapbox.api.directions.v5.models.DirectionsResponse;
 import com.mapbox.api.directions.v5.models.DirectionsRoute;
@@ -63,7 +65,10 @@ import retrofit2.Response;
 import static com.mapbox.android.core.location.LocationEnginePriority.HIGH_ACCURACY;
 
 public class NavigationLauncherActivity extends AppCompatActivity implements OnMapReadyCallback,
-        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener, SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface, FetchGeocodingTaskCallbackInterface, GeocodingInputDialog.NoticeDialogListener {
+        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener,
+        SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface,
+        FetchGeocodingTaskCallbackInterface, GeocodingInputDialog.NoticeDialogListener,
+        PermissionsListener {
 
     private static final int CAMERA_ANIMATION_DURATION = 1000;
     private static final int DEFAULT_CAMERA_ZOOM = 16;
@@ -73,6 +78,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private LocationEngine locationEngine;
     private NavigationMapRoute mapRoute;
     private MapboxMap mapboxMap;
+    private PermissionsManager permissionsManager;
 
     @BindView(R.id.mapView)
     MapView mapView;
@@ -107,6 +113,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
         localeUtils = new LocaleUtils();
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setTitle("");
+        }
     }
 
     @Override
@@ -243,8 +253,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         this.mapboxMap = mapboxMap;
         this.mapboxMap.getUiSettings().setAttributionDialogManager(new GHAttributionDialogManager(this.mapView.getContext(), this.mapboxMap));
         this.mapboxMap.setOnMapLongClickListener(this);
-        initLocationEngine();
-        initLocationLayer();
         initMapRoute();
 
         this.mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
@@ -262,6 +270,15 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             }
         });
 
+        // Check for location permission
+        permissionsManager = new PermissionsManager(this);
+        if (!PermissionsManager.areLocationPermissionsGranted(this)) {
+            showLoading();
+            permissionsManager.requestLocationPermissions(this);
+        } else {
+            initLocationEngine();
+            initLocationLayer();
+        }
     }
 
     @Override
@@ -621,4 +638,26 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         updateWaypoints(points);
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    public void onExplanationNeeded(List<String> permissionsToExplain) {
+        Toast.makeText(this, "This app needs location permissions to work properly.",
+                Toast.LENGTH_LONG).show();
+    }
+
+    @Override
+    public void onPermissionResult(boolean granted) {
+        if (granted) {
+            initLocationEngine();
+            initLocationLayer();
+        } else {
+            Toast.makeText(this, "You didn't grant location permissions.",
+                    Toast.LENGTH_LONG).show();
+        }
+    }
 }
