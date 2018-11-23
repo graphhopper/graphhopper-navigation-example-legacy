@@ -1,6 +1,8 @@
 package com.graphhopper.navigation.example;
 
+import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
@@ -34,7 +36,6 @@ import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
-import com.mapbox.mapboxsdk.annotations.MarkerViewOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.exceptions.InvalidLatLngBoundsException;
@@ -252,7 +253,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     public void onMapReady(MapboxMap mapboxMap) {
         this.mapboxMap = mapboxMap;
         this.mapboxMap.getUiSettings().setAttributionDialogManager(new GHAttributionDialogManager(this.mapView.getContext(), this.mapboxMap));
-        this.mapboxMap.setOnMapLongClickListener(this);
+        this.mapboxMap.addOnMapLongClickListener(this);
         initMapRoute();
 
         this.mapboxMap.setOnInfoWindowClickListener(new MapboxMap.OnInfoWindowClickListener() {
@@ -273,7 +274,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         // Check for location permission
         permissionsManager = new PermissionsManager(this);
         if (!PermissionsManager.areLocationPermissionsGranted(this)) {
-            showLoading();
             permissionsManager.requestLocationPermissions(this);
         } else {
             initLocationEngine();
@@ -342,6 +342,11 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     }
 
     private void fetchRoute() {
+        if (waypoints.size() < 2) {
+            onError(R.string.error_not_enough_waypoints);
+            return;
+        }
+
         showLoading();
         NavigationRoute.Builder builder = NavigationRoute.builder(this)
                 .accessToken("pk." + getString(R.string.gh_key))
@@ -349,15 +354,11 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 .user("gh")
                 .alternatives(true);
 
-        if (hasBearing)
-            // 90 seems to be the default tolerance of the SDK
-            builder.origin(currentLocation, currentBearing, 90.0);
-        else
-            builder.origin(currentLocation);
-
         for (int i = 0; i < waypoints.size(); i++) {
             Point p = waypoints.get(i);
-            if (i < waypoints.size() - 1) {
+            if (i == 0) {
+                builder.origin(p);
+            } else if (i < waypoints.size() - 1) {
                 builder.addWaypoint(p);
             } else {
                 builder.destination(p);
@@ -381,6 +382,13 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 }
                 hideLoading();
             }
+
+            @Override
+            public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
+                super.onFailure(call, throwable);
+                Snackbar.make(mapView, R.string.error_calculating_route, Snackbar.LENGTH_LONG).show();
+                hideLoading();
+            }
         });
     }
 
@@ -391,7 +399,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             Point lastPoint = this.waypoints.get(this.waypoints.size() - 1);
             LatLng latLng = new LatLng(lastPoint.latitude(), lastPoint.longitude());
             setCurrentMarkerPosition(latLng);
-            if (currentLocation != null) {
+            if (this.waypoints.size() > 1) {
                 fetchRoute();
             } else {
                 hideLoading();
@@ -446,6 +454,39 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             return;
         }
 
+        if (currentLocation != null && waypoints.size() > 1) {
+            float[] distance = new float[1];
+            Location.distanceBetween(currentLocation.latitude(), currentLocation.longitude(), waypoints.get(0).latitude(), waypoints.get(0).longitude(), distance);
+
+            //Ask the user if he would like to recalculate the route from his current positions
+            if (distance[0] > 100) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setTitle(R.string.error_too_far_from_start_title);
+                builder.setMessage(R.string.error_too_far_from_start_message);
+                builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        waypoints.set(0, currentLocation);
+                        fetchRoute();
+                    }
+                });
+                builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        _launchNavigationWithRoute();
+                    }
+                });
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            } else {
+                _launchNavigationWithRoute();
+            }
+        } else {
+            _launchNavigationWithRoute();
+        }
+
+    }
+
+    private void _launchNavigationWithRoute() {
         NavigationLauncherOptions.Builder optionsBuilder = NavigationLauncherOptions.builder()
                 .shouldSimulateRoute(getShouldSimulateRouteFromSharedPreferences())
                 .directionsProfile(getRouteProfileFromSharedPreferences())
@@ -477,7 +518,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             animateCamera(new LatLng(location.getLatitude(), location.getLongitude()));
             Snackbar.make(mapView, R.string.explanation_long_press_waypoint, Snackbar.LENGTH_LONG).show();
             locationFound = true;
-            hideLoading();
         }
     }
 
@@ -513,9 +553,9 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private void setCurrentMarkerPosition(LatLng position) {
         if (position != null) {
             if (currentMarker == null) {
-                MarkerViewOptions markerViewOptions = new MarkerViewOptions()
+                MarkerOptions markerOptions = new MarkerOptions()
                         .position(position);
-                currentMarker = mapboxMap.addMarker(markerViewOptions);
+                currentMarker = mapboxMap.addMarker(markerOptions);
             } else {
                 currentMarker.setPosition(position);
             }
@@ -592,7 +632,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
         //List<LatLng> bounds = new ArrayList<>();
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
-        boundsBuilder.include(new LatLng(currentLocation.latitude(), currentLocation.longitude()));
+        if (currentLocation != null)
+            boundsBuilder.include(new LatLng(currentLocation.latitude(), currentLocation.longitude()));
 
         for (GeocodingLocation location : locations) {
             GeocodingPoint point = location.getPoint();
