@@ -234,8 +234,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         waypoints.clear();
         mapRoute.removeRoute();
         route = null;
-        if (currentMarker != null)
-            currentMarker.remove();
+        if (currentMarker != null) {
+            mapboxMap.removeMarker(currentMarker);
+            currentMarker = null;
+        }
 
         clearGeocodingResults();
     }
@@ -243,7 +245,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     public void clearGeocodingResults() {
         if (markers != null) {
             for (Marker marker : markers) {
-                marker.remove();
+                this.mapboxMap.removeMarker(marker);
             }
             markers.clear();
         }
