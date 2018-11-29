@@ -31,7 +31,10 @@
     <string name="error_location_not_found">Location not found</string>
     <string name="error_geocoding_no_location">No location found</string>
     <string name="error_too_many_waypoints">A route cannot have more than 25 waypoints</string>
+    <string name="error_not_enough_waypoints">A route needs at least 2 waypoints</string>
     <string name="error_no_browser_installed">No browser installed</string>
+    <string name="error_too_far_from_start_title">Too far from start</string>
+    <string name="error_too_far_from_start_message">Would you like to recalculate the route from your current location?</string>
     <string name="explanation_long_press_waypoint">Long press map to place waypoint</string>
     <string name="launch_navigation">Launch Navigation</string>
     <string name="reset_route">Reset Route</string>
