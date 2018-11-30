@@ -3,21 +3,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <CheckBoxPreference
+        android:defaultValue="false"
         android:key="@string/simulate_route_key"
-        android:title="@string/simulate_route"
-        android:defaultValue="false" />
+        android:title="@string/simulate_route" />
+    <CheckBoxPreference
+        android:defaultValue="true"
+        android:key="@string/start_from_location_key"
+        android:title="@string/start_from_location" />
     <ListPreference
-        android:key="@string/language_key"
-        android:title="@string/language"
+        android:defaultValue="@string/default_locale"
         android:entries="@array/language_array"
         android:entryValues="@array/language_values_array"
-        android:defaultValue="@string/default_locale" />
+        android:key="@string/language_key"
+        android:title="@string/language" />
     <ListPreference
-        android:key="@string/unit_type_key"
-        android:title="@string/unit_type"
+        android:defaultValue="@string/default_unit_type"
         android:entries="@array/unit_type_array"
         android:entryValues="@array/unit_type_values_array"
-        android:defaultValue="@string/default_unit_type" />
+        android:key="@string/unit_type_key"
+        android:title="@string/unit_type" />
     <ListPreference
         android:entries="@array/route_profile_array"
         android:entryValues="@array/route_profile_values_array"
