@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -187,6 +188,41 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 locationEngine.activate();
             }
         }
+
+        handleIntent(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        // getIntent() should always return the most recent
+        setIntent(intent);
+    }
+
+    private void handleIntent(Intent intent){
+        if (intent != null) {
+            Uri data = intent.getData();
+            if (data != null && "graphhopper.com".equals(data.getHost())) {
+                if (data.getPath().contains("maps")) {
+                    if(this.mapboxMap == null){
+                        //this happens when onResume is called at the initial start and we will call this method again in onMapReady
+                        return;
+                    }
+                    clearRoute();
+                    //Open Map Url
+                    setRouteProfileToSharedPreferences(data.getQueryParameter("vehicle"));
+
+                    List<String> points = data.getQueryParameters("point");
+                    for (String point : points) {
+                        String[] pointArr = point.split(",");
+                        addPointToRoute(Double.parseDouble(pointArr[0]), Double.parseDouble(pointArr[1]));
+                    }
+
+                    setStartFromLocationToSharedPreferences(false);
+                    updateRouteAfterWaypointChange();
+                }
+            }
+        }
     }
 
     @Override
@@ -237,8 +273,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             mapboxMap.removeMarker(currentMarker);
             currentMarker = null;
         }
-
-        clearGeocodingResults();
     }
 
     public void clearGeocodingResults() {
@@ -264,6 +298,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                     if (geocodingMarker.getId() == marker.getId()) {
                         LatLng position = geocodingMarker.getPosition();
                         addPointToRoute(position.getLatitude(), position.getLongitude());
+                        updateRouteAfterWaypointChange();
                         marker.hideInfoWindow();
                         return true;
                     }
@@ -280,16 +315,18 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             initLocationEngine();
             initLocationLayer();
         }
+
+        handleIntent(getIntent());
     }
 
     @Override
     public void onMapLongClick(@NonNull LatLng point) {
         addPointToRoute(point.getLatitude(), point.getLongitude());
+        updateRouteAfterWaypointChange();
     }
 
     private void addPointToRoute(double lat, double lng) {
         waypoints.add(Point.fromLngLat(lng, lat));
-        updateRouteAfterWaypointChange();
     }
 
     @SuppressWarnings({"MissingPermission"})
@@ -457,6 +494,37 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private boolean getStartFromLocationFromSharedPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         return sharedPreferences.getBoolean(getString(R.string.start_from_location_key), true);
+    }
+
+    private void setStartFromLocationToSharedPreferences(boolean setStartFromLocation) {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.putBoolean(getString(R.string.start_from_location_key), setStartFromLocation);
+        editor.apply();
+    }
+
+    private void setRouteProfileToSharedPreferences(String ghVehicle) {
+        if (ghVehicle == null)
+            return;
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        String routeProfile;
+        switch (ghVehicle) {
+            case "foot":
+            case "hike":
+                routeProfile = "walking";
+                break;
+            case "bike":
+            case "mtb":
+            case "racingbike":
+                routeProfile = "cycling";
+                break;
+            default:
+                routeProfile = "driving";
+        }
+        editor.putString(getString(R.string.route_profile_key), routeProfile);
+        editor.apply();
     }
 
     private String getRouteProfileFromSharedPreferences() {

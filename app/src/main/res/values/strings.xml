@@ -42,5 +42,7 @@
     <string name="reset_route">Reset Route</string>
     <string name="fetch_solution">Fetch Solution</string>
     <string name="geocoding_search">Search</string>
+
+    <string name="open_gh_maps">Open GH Maps Url</string>
 </resources>
 

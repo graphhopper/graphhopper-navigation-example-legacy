@@ -10,11 +10,22 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name="com.graphhopper.navigation.example.NavigationLauncherActivity">
+        <activity android:name="com.graphhopper.navigation.example.NavigationLauncherActivity"
+            android:launchMode="singleInstance" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter android:label="@string/open_gh_maps">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "https://graphhopper.com/maps/” -->
+                <data
+                    android:host="graphhopper.com"
+                    android:pathPrefix="/maps"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
 
