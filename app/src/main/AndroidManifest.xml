@@ -27,6 +27,17 @@
                     android:pathPrefix="/maps"
                     android:scheme="https" />
             </intent-filter>
+            <intent-filter android:label="@string/open_vrp_solution">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <!-- Accepts URIs that begin with "https://graphhopper.com/api/1/vrp/solution/” -->
+                <data
+                    android:host="graphhopper.com"
+                    android:pathPrefix="/api/1/vrp/solution"
+                    android:scheme="https" />
+            </intent-filter>
         </activity>
 
         <activity

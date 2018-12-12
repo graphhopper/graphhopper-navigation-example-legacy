@@ -38,18 +38,15 @@ public class FetchSolutionTask extends AsyncTask<FetchSolutionConfig, Void, List
             List<Route> routes = res.getSolution().getRoutes();
 
             for (Route route : routes) {
-                if (route.getVehicleId().equals(solutions[0].vehicleId)) {
+                if (route.getVehicleId().equals(solutions[0].vehicleId) || solutions[0].vehicleId == null) {
                     // Found the right vehicle
                     List<Activity> activities = route.getActivities();
                     for (int i = 0; i < activities.size(); i++) {
-                        //Skip start location and rather use GPS
-                        if (i == 0)
-                            continue;
-
                         Activity activity = activities.get(i);
                         Address address = activity.getAddress();
                         points.add(Point.fromLngLat(address.getLon(), address.getLat()));
                     }
+                    break;
                 }
             }
 
