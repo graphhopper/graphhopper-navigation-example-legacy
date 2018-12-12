@@ -32,7 +32,7 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <!-- Accepts URIs that begin with "https://graphhopper.com/maps/” -->
+                <!-- Accepts URIs that begin with "https://graphhopper.com/api/1/vrp/solution/” -->
                 <data
                     android:host="graphhopper.com"
                     android:pathPrefix="/api/1/vrp/solution"
