@@ -1,5 +1,6 @@
 package com.graphhopper.navigation.example;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
@@ -22,9 +23,6 @@ import android.widget.Toast;
 
 import com.graphhopper.directions.api.client.model.GeocodingLocation;
 import com.graphhopper.directions.api.client.model.GeocodingPoint;
-import com.mapbox.android.core.location.LocationEngine;
-import com.mapbox.android.core.location.LocationEngineListener;
-import com.mapbox.android.core.location.LocationEngineProvider;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.api.directions.v5.DirectionsCriteria;
@@ -64,10 +62,8 @@ import butterknife.ButterKnife;
 import retrofit2.Call;
 import retrofit2.Response;
 
-import static com.mapbox.android.core.location.LocationEnginePriority.HIGH_ACCURACY;
-
 public class NavigationLauncherActivity extends AppCompatActivity implements OnMapReadyCallback,
-        MapboxMap.OnMapLongClickListener, LocationEngineListener, OnRouteSelectionChangeListener,
+        MapboxMap.OnMapLongClickListener, OnRouteSelectionChangeListener,
         SolutionInputDialog.NoticeDialogListener, FetchSolutionTaskCallbackInterface,
         FetchGeocodingTaskCallbackInterface, GeocodingInputDialog.NoticeDialogListener,
         PermissionsListener {
@@ -77,7 +73,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private static final int CHANGE_SETTING_REQUEST_CODE = 1;
 
     private LocationLayerPlugin locationLayer;
-    private LocationEngine locationEngine;
     private NavigationMapRoute mapRoute;
     private MapboxMap mapboxMap;
     private PermissionsManager permissionsManager;
@@ -88,17 +83,12 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     ProgressBar loading;
 
     private Marker currentMarker;
-    List<Marker> markers;
-    private Point currentLocation;
-    private double currentBearing;
-    private boolean hasBearing = false;
+    private List<Marker> markers;
     private List<Point> waypoints = new ArrayList<>();
     private DirectionsRoute route;
     private LocaleUtils localeUtils;
 
-    private boolean locationFound;
-
-    final int[] padding = new int[]{50, 50, 50, 50};
+    private final int[] padding = new int[]{50, 50, 50, 50};
 
     private String currentJobId = "";
     private String currentVehicleId = "";
@@ -182,13 +172,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     public void onResume() {
         super.onResume();
         mapView.onResume();
-        if (locationEngine != null) {
-            locationEngine.addLocationEngineListener(this);
-            if (!locationEngine.isConnected()) {
-                locationEngine.activate();
-            }
-        }
-
         handleIntent(getIntent());
     }
 
@@ -229,9 +212,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     public void onPause() {
         super.onPause();
         mapView.onPause();
-        if (locationEngine != null) {
-            locationEngine.removeLocationEngineListener(this);
-        }
     }
 
     @Override
@@ -253,10 +233,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     protected void onDestroy() {
         super.onDestroy();
         mapView.onDestroy();
-        if (locationEngine != null) {
-            locationEngine.removeLocationUpdates();
-            locationEngine.deactivate();
-        }
     }
 
     @Override
@@ -265,7 +241,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         mapView.onSaveInstanceState(outState);
     }
 
-    public void clearRoute() {
+    private void clearRoute() {
         waypoints.clear();
         mapRoute.removeRoute();
         route = null;
@@ -275,7 +251,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
     }
 
-    public void clearGeocodingResults() {
+    private void clearGeocodingResults() {
         if (markers != null) {
             for (Marker marker : markers) {
                 this.mapboxMap.removeMarker(marker);
@@ -312,7 +288,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         if (!PermissionsManager.areLocationPermissionsGranted(this)) {
             permissionsManager.requestLocationPermissions(this);
         } else {
-            initLocationEngine();
             initLocationLayer();
         }
 
@@ -329,49 +304,20 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         waypoints.add(Point.fromLngLat(lng, lat));
     }
 
-    @SuppressWarnings({"MissingPermission"})
-    @Override
-    public void onConnected() {
-        locationEngine.requestLocationUpdates();
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        currentLocation = Point.fromLngLat(location.getLongitude(), location.getLatitude());
-        if (location.hasBearing()) {
-            currentBearing = location.getBearing();
-            hasBearing = true;
-        } else {
-            hasBearing = false;
-        }
-        onLocationFound(location);
-    }
-
     @Override
     public void onNewPrimaryRouteSelected(DirectionsRoute directionsRoute) {
         route = directionsRoute;
     }
 
     @SuppressWarnings({"MissingPermission"})
-    private void initLocationEngine() {
-        locationEngine = new LocationEngineProvider(this).obtainBestLocationEngineAvailable();
-        locationEngine.setPriority(HIGH_ACCURACY);
-        locationEngine.setInterval(0);
-        locationEngine.setFastestInterval(1000);
-        locationEngine.addLocationEngineListener(this);
-        locationEngine.activate();
-
-        if (locationEngine.getLastLocation() != null) {
-            Location lastLocation = locationEngine.getLastLocation();
-            onLocationChanged(lastLocation);
-            currentLocation = Point.fromLngLat(lastLocation.getLongitude(), lastLocation.getLatitude());
-        }
-    }
-
-    @SuppressWarnings({"MissingPermission"})
     private void initLocationLayer() {
-        locationLayer = new LocationLayerPlugin(mapView, mapboxMap, locationEngine);
+        locationLayer = new LocationLayerPlugin(mapView, mapboxMap);
         locationLayer.setRenderMode(RenderMode.COMPASS);
+        Location lastKnownLocation = getLastKnownLocation();
+        if(lastKnownLocation != null){
+            // TODO we could think about zoom to the user location later on as well
+            animateCamera(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
+        }
     }
 
     private void initMapRoute() {
@@ -394,15 +340,17 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
 
         if (startFromLocation) {
-            if (currentLocation == null) {
+            Location lastKnownLocation = getLastKnownLocation();
+            if (lastKnownLocation == null) {
                 onError(R.string.error_location_not_found);
                 return;
             } else {
-                if (hasBearing)
+                Point location = Point.fromLngLat(lastKnownLocation.getLongitude(), lastKnownLocation.getLatitude());
+                if (lastKnownLocation.hasBearing())
                     // 90 seems to be the default tolerance of the SDK
-                    builder.origin(currentLocation, currentBearing, 90.0);
+                    builder.origin(location, (double) lastKnownLocation.getBearing(), 90.0);
                 else
-                    builder.origin(currentLocation);
+                    builder.origin(location);
             }
         }
 
@@ -442,7 +390,15 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         });
     }
 
-    public void updateRouteAfterWaypointChange() {
+    @SuppressLint("MissingPermission")
+    private Location getLastKnownLocation(){
+        if(locationLayer != null){
+            return locationLayer.getLastKnownLocation();
+        }
+        return null;
+    }
+
+    private void updateRouteAfterWaypointChange() {
         if (this.waypoints.isEmpty()) {
             hideLoading();
         } else {
@@ -540,9 +496,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             return;
         }
 
-        if (currentLocation != null && waypoints.size() > 1) {
+        Location lastKnownLocation = getLastKnownLocation();
+        if (lastKnownLocation != null && waypoints.size() > 1) {
             float[] distance = new float[1];
-            Location.distanceBetween(currentLocation.latitude(), currentLocation.longitude(), waypoints.get(0).latitude(), waypoints.get(0).longitude(), distance);
+            Location.distanceBetween(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude(), waypoints.get(0).latitude(), waypoints.get(0).longitude(), distance);
 
             //Ask the user if he would like to recalculate the route from his current positions
             if (distance[0] > 100) {
@@ -551,7 +508,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 builder.setMessage(R.string.error_too_far_from_start_message);
                 builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
-                        waypoints.set(0, currentLocation);
+                        waypoints.set(0, Point.fromLngLat(lastKnownLocation.getLongitude(), lastKnownLocation.getLatitude()));
                         fetchRoute();
                     }
                 });
@@ -599,15 +556,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
     }
 
-    private void onLocationFound(Location location) {
-        if (!locationFound) {
-            animateCamera(new LatLng(location.getLatitude(), location.getLongitude()));
-            Snackbar.make(mapView, R.string.explanation_long_press_waypoint, Snackbar.LENGTH_LONG).show();
-            locationFound = true;
-        }
-    }
-
-    public void boundCameraToRoute() {
+    private void boundCameraToRoute() {
         if (route != null) {
             List<Point> routeCoords = LineString.fromPolyline(route.geometry(),
                     Constants.PRECISION_6).coordinates();
@@ -658,7 +607,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         updateRouteAfterWaypointChange();
     }
 
-    public void showSolutionInputDialog() {
+    private void showSolutionInputDialog() {
         // Create an instance of the dialog fragment and show it
         SolutionInputDialog dialog = new SolutionInputDialog();
         dialog.setJobId(currentJobId);
@@ -666,7 +615,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         dialog.show(getFragmentManager(), "gh-example");
     }
 
-    public void showGeocodingInputDialog() {
+    private void showGeocodingInputDialog() {
         // Create an instance of the dialog fragment and show it
         GeocodingInputDialog dialog = new GeocodingInputDialog();
         dialog.setGeocodingInput(currentGeocodingInput);
@@ -718,8 +667,9 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
         //List<LatLng> bounds = new ArrayList<>();
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
-        if (currentLocation != null)
-            boundsBuilder.include(new LatLng(currentLocation.latitude(), currentLocation.longitude()));
+        Location lastKnownLocation =  getLastKnownLocation();
+        if (lastKnownLocation != null)
+            boundsBuilder.include(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
 
         for (GeocodingLocation location : locations) {
             GeocodingPoint point = location.getPoint();
@@ -780,7 +730,6 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     @Override
     public void onPermissionResult(boolean granted) {
         if (granted) {
-            initLocationEngine();
             initLocationLayer();
         } else {
             Toast.makeText(this, "You didn't grant location permissions.",
