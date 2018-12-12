@@ -43,6 +43,7 @@
     <string name="fetch_solution">Fetch Solution</string>
     <string name="geocoding_search">Search</string>
 
-    <string name="open_gh_maps">Open GH Maps Url</string>
+    <string name="open_gh_maps">Open Route from GH Maps</string>
+    <string name="open_vrp_solution">Open VRP Solution</string>
 </resources>
 

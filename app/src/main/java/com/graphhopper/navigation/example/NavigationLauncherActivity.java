@@ -182,30 +182,48 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         setIntent(intent);
     }
 
-    private void handleIntent(Intent intent){
+    private void handleIntent(Intent intent) {
         if (intent != null) {
             Uri data = intent.getData();
             if (data != null && "graphhopper.com".equals(data.getHost())) {
-                if (data.getPath().contains("maps")) {
-                    if(this.mapboxMap == null){
+                if (data.getPath() != null) {
+                    if (this.mapboxMap == null) {
                         //this happens when onResume is called at the initial start and we will call this method again in onMapReady
                         return;
                     }
-                    clearRoute();
-                    //Open Map Url
-                    setRouteProfileToSharedPreferences(data.getQueryParameter("vehicle"));
+                    if (data.getPath().contains("maps")) {
+                        clearRoute();
+                        //Open Map Url
+                        setRouteProfileToSharedPreferences(data.getQueryParameter("vehicle"));
 
-                    List<String> points = data.getQueryParameters("point");
-                    for (String point : points) {
-                        String[] pointArr = point.split(",");
-                        addPointToRoute(Double.parseDouble(pointArr[0]), Double.parseDouble(pointArr[1]));
+                        List<String> points = data.getQueryParameters("point");
+                        for (String point : points) {
+                            String[] pointArr = point.split(",");
+                            addPointToRoute(Double.parseDouble(pointArr[0]), Double.parseDouble(pointArr[1]));
+                        }
+
+                        setStartFromLocationToSharedPreferences(false);
+                        updateRouteAfterWaypointChange();
                     }
-
-                    setStartFromLocationToSharedPreferences(false);
-                    updateRouteAfterWaypointChange();
+                    // https://graphhopper.com/api/1/vrp/solution/e7fb8a9b-e441-4ec2-a487-20788e591bb3?vehicle_id=1&key=[KEY]
+                    if (data.getPath().contains("api/1/vrp/solution")) {
+                        clearRoute();
+                        //Open Vrp Url
+                        List<String> pathSegments = data.getPathSegments();
+                        fetchVrpSolution(pathSegments.get(pathSegments.size() - 1), data.getQueryParameter("vehicle_id"));
+                    }
                 }
+
             }
         }
+    }
+
+    private void fetchVrpSolution(String jobId, String vehicleId){
+        currentJobId = jobId;
+        currentVehicleId = vehicleId;
+
+        showLoading();
+        new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(currentJobId, currentVehicleId));
     }
 
     @Override
@@ -314,7 +332,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         locationLayer = new LocationLayerPlugin(mapView, mapboxMap);
         locationLayer.setRenderMode(RenderMode.COMPASS);
         Location lastKnownLocation = getLastKnownLocation();
-        if(lastKnownLocation != null){
+        if (lastKnownLocation != null) {
             // TODO we could think about zoom to the user location later on as well
             animateCamera(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
         }
@@ -391,8 +409,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     }
 
     @SuppressLint("MissingPermission")
-    private Location getLastKnownLocation(){
-        if(locationLayer != null){
+    private Location getLastKnownLocation() {
+        if (locationLayer != null) {
             return locationLayer.getLastKnownLocation();
         }
         return null;
@@ -629,11 +647,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         if (jobId != null) {
             EditText vehicleId = dialog.getDialog().findViewById(R.id.vehicle_id);
 
-            currentJobId = jobId.getText().toString();
-            currentVehicleId = vehicleId.getText().toString();
-
-            showLoading();
-            new FetchSolutionTask(this, getString(R.string.gh_key)).execute(new FetchSolutionConfig(currentJobId, currentVehicleId));
+            fetchVrpSolution(jobId.getText().toString(), vehicleId.getText().toString());
         }
         // Check if it's a geocoding search
         EditText search = dialog.getDialog().findViewById(R.id.geocoding_input_id);
@@ -667,7 +681,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
         //List<LatLng> bounds = new ArrayList<>();
         LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
-        Location lastKnownLocation =  getLastKnownLocation();
+        Location lastKnownLocation = getLastKnownLocation();
         if (lastKnownLocation != null)
             boundsBuilder.include(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
 
@@ -712,6 +726,10 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     @Override
     public void onPostExecute(List<Point> points) {
+        if(getStartFromLocationFromSharedPreferences()){
+            // Remove the first point if we want to start from the current location
+            points.remove(0);
+        }
         updateWaypoints(points);
     }
 
