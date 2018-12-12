@@ -4,13 +4,14 @@
     <string name="mapbox_access_token" translatable="false">pk.test</string>
     <!-- This is your GH key, register one at https://www.graphhopper.com/ -->
     <string name="gh_key" translatable="false">[YOUR_KEY]</string>
-    <!-- This is the endpoint for the routing API -->
-    <string name="base_url" translatable="false">[YOUR_ENDPOINT]/</string>
+    <!-- This is the endpoint for the routing API, please note this endpoint might change in the future, please contact GraphHopper if you want to publish an app using this endpoint-->
+    <string name="base_url" translatable="false">https://graphhopper.com/api/1/navigate/</string>
 
-    <!-- Uncomment this part if you want to use tiles from MapTiler, you need to register for a valid key and enter it below
-    <string name="map_view_styleUrl" translatable="false">https://maps.tilehosting.com/styles/basic/style.json?key=[YOUR_KEY]</string>
-    <string name="navigation_guidance_day" translatable="false">https://maps.tilehosting.com/styles/basic/style.json?key=[YOUR_KEY]</string>
-    <string name="navigation_guidance_night" translatable="false">https://maps.tilehosting.com/styles/basic/style.json?key=[YOUR_KEY]</string>
-    -->
-
+    <!-- These are the map style urls, you can get a key at mapilion.com -->
+    <!-- The style used for regular map viewing and route planning -->
+    <string name="map_view_styleUrl" translatable="false">https://tiles.mapilion.com/assets/osm-bright/style.json?key=[YOUR_KEY]</string>
+    <!-- The "day" style used for navigation -->
+    <string name="navigation_guidance_day" translatable="false">https://tiles.mapilion.com/assets/osm-bright/style.json?key=[YOUR_KEY]</string>
+    <!-- The "night" style used for navigation -->
+    <string name="navigation_guidance_night" translatable="false">https://tiles.mapilion.com/assets/osm-bright/style.json?key=[YOUR_KEY]</string>
 </resources>

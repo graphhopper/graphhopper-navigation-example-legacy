@@ -713,7 +713,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 if (location.getOsmType() != null)
                     snippet += "OSM-Type: " + location.getOsmType() + "\n";
             }
-            snippet += "\n\n Long press on info window\n to add point to route";
+            snippet += "\n\n Tap on info window\n to add point to route";
             if (!snippet.isEmpty())
                 markerOptions.snippet(snippet);
             markerOptions.icon(IconFactory.getInstance(this.getApplicationContext()).fromResource(R.drawable.ic_map_marker));
