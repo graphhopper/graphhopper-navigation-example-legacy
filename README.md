@@ -32,7 +32,7 @@ You can fork this project and adapt it to your needs, or use it as orientation w
 
 This project stands under the Apache License.
 
-It was originally based on the [Mapbox Sample App](https://github.com/mapbox/mapbox-navigation-android/tree/master/app),
+It is a fork of the [Mapbox Sample App](https://github.com/mapbox/mapbox-navigation-android/tree/master/app),
 which is licensed under the [MIT](https://github.com/mapbox/mapbox-navigation-android/blob/master/LICENSE) license.
 
 ## Updating the developer-config file
