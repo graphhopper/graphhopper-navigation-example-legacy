@@ -4,6 +4,8 @@ This Android example application showcases navigation based on instructions retu
 
 ## Features
 
+![features](./files/graphhopper-navigation-example.png "Feature Screenshot")
+
 - Turn-by-turn navigation including spoken turn instruction
 - Route planning (from A to B via intermediate points)
 - Load route optimization solutions from the [GraphHopper Route Optimization API](https://graphhopper.com/api/1/docs/route-optimization/)
