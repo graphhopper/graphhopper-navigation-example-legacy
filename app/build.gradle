@@ -5,16 +5,16 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 27
     defaultConfig {
-        applicationId "graphhopper.com.graphhopper_navigation_example"
+        applicationId "com.graphhopper.navigation.example"
         minSdkVersion 23
         targetSdkVersion 27
-        versionCode 1
-        versionName "1.0"
+        versionCode 7
+        versionName "1.0.0-pre3"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -28,7 +28,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:appcompat-v7:27.1.1'
     implementation 'com.android.support.constraint:constraint-layout:1.1.3'
-    implementation 'com.mapbox.mapboxsdk:mapbox-android-navigation-ui:0.19.0'
+    implementation 'com.graphhopper:graphhopper-navigation-android-ui:0.1.0-SNAPSHOT'
     implementation 'com.graphhopper:directions-api-client:0.10.1-4'
     implementation 'com.jakewharton:butterknife:8.8.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'

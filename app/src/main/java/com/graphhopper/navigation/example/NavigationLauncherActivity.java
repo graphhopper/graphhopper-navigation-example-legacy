@@ -726,7 +726,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     @Override
     public void onPostExecute(List<Point> points) {
-        if(getStartFromLocationFromSharedPreferences()){
+        if(getStartFromLocationFromSharedPreferences() && !points.isEmpty()){
             // Remove the first point if we want to start from the current location
             points.remove(0);
         }
