@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Html;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -71,6 +72,8 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private static final int CAMERA_ANIMATION_DURATION = 1000;
     private static final int DEFAULT_CAMERA_ZOOM = 16;
     private static final int CHANGE_SETTING_REQUEST_CODE = 1;
+    // If you change the first start dialog (help message), increase this number, all users will be shown the message again
+    private static final int FIRST_START_DIALOG_VERSION = 1;
 
     private LocationLayerPlugin locationLayer;
     private NavigationMapRoute mapRoute;
@@ -108,6 +111,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle("");
         }
+        showFirstStartIfNecessary();
     }
 
     @Override
@@ -134,6 +138,9 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
                 return true;
             case R.id.geocoding_search_btn:
                 showGeocodingInputDialog();
+                return true;
+            case R.id.help:
+                showHelpDialog();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -218,7 +225,36 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         }
     }
 
-    private void fetchVrpSolution(String jobId, String vehicleId){
+    private void showFirstStartIfNecessary() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPreferences.getInt(getString(R.string.first_start_dialog_key), -1) < FIRST_START_DIALOG_VERSION) {
+            showHelpDialog();
+        }
+    }
+
+    private void showHelpDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.help_message_title);
+        builder.setMessage(Html.fromHtml("1. Please note, this is a demo and not a full featured application. The purpose of this application is to provide an easy starting point for developers to create a navigation application with GraphHopper<br/>2. You should enable your GPS/location<br/>3.You can either search for a location using the magnifier icon or by long pressing on the map<br/>4. Start the navigation by tapping the arrow button<br/><br/>This project is 100% open source, contributions are welcome.<br/><br/>Please drive carefully and always abide local law and signs. Roads might be impassible due to construction projects, traffic, weather, or other events."));
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        builder.setPositiveButton(R.string.agree, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putInt(getString(R.string.first_start_dialog_key), FIRST_START_DIALOG_VERSION);
+                editor.apply();
+            }
+        });
+        builder.setNeutralButton(R.string.github, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/graphhopper/graphhopper-navigation-example")));
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void fetchVrpSolution(String jobId, String vehicleId) {
         currentJobId = jobId;
         currentVehicleId = vehicleId;
 
@@ -726,7 +762,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
 
     @Override
     public void onPostExecute(List<Point> points) {
-        if(getStartFromLocationFromSharedPreferences() && !points.isEmpty()){
+        if (getStartFromLocationFromSharedPreferences() && !points.isEmpty()) {
             // Remove the first point if we want to start from the current location
             points.remove(0);
         }
