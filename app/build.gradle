@@ -8,8 +8,8 @@ android {
         applicationId "com.graphhopper.navigation.example"
         minSdkVersion 23
         targetSdkVersion 27
-        versionCode 7
-        versionName "1.0.0-pre3"
+        versionCode 9
+        versionName "1.0.0-pre5"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

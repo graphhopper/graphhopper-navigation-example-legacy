@@ -715,18 +715,17 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             return;
         }
 
-        //List<LatLng> bounds = new ArrayList<>();
-        LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+        List<LatLng> bounds = new ArrayList<>();
         Location lastKnownLocation = getLastKnownLocation();
         if (lastKnownLocation != null)
-            boundsBuilder.include(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
+            bounds.add(new LatLng(lastKnownLocation.getLatitude(), lastKnownLocation.getLongitude()));
 
         for (GeocodingLocation location : locations) {
             GeocodingPoint point = location.getPoint();
             MarkerOptions markerOptions = new MarkerOptions();
             LatLng latLng = new LatLng(point.getLat(), point.getLng());
             markerOptions.position(latLng);
-            boundsBuilder.include(latLng);
+            bounds.add(latLng);
             markerOptions.title(location.getName());
             String snippet = "";
             if (location.getStreet() != null) {
@@ -756,7 +755,15 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
             markers.add(mapboxMap.addMarker(markerOptions));
         }
 
-        animateCameraBbox(boundsBuilder.build(), CAMERA_ANIMATION_DURATION, padding);
+        // For bounds we need at least 2 entries
+        if (bounds.size() >= 2) {
+            LatLngBounds.Builder boundsBuilder = new LatLngBounds.Builder();
+            boundsBuilder.includes(bounds);
+            animateCameraBbox(boundsBuilder.build(), CAMERA_ANIMATION_DURATION, padding);
+        } else if (bounds.size() == 1) {
+            // If there is only 1 result (=>current location unknown), we just zoom to that result
+            animateCamera(bounds.get(0));
+        }
         hideLoading();
     }
 
