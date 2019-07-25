@@ -74,6 +74,7 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private static final int CHANGE_SETTING_REQUEST_CODE = 1;
     // If you change the first start dialog (help message), increase this number, all users will be shown the message again
     private static final int FIRST_START_DIALOG_VERSION = 1;
+    private static final int FIRST_NAVIGATION_DIALOG_VERSION = 1;
 
     private LocationLayerPlugin locationLayer;
     private NavigationMapRoute mapRoute;
@@ -247,6 +248,24 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
         builder.setNeutralButton(R.string.github, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/graphhopper/graphhopper-navigation-example")));
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private void showNavigationDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.legal_title);
+        builder.setMessage(Html.fromHtml("You are required to comply with applicable laws.<br/>When using mapping data, directions or other data from GraphHopper / OpenStreetMap, it is possible that the results differ from the actual situation. You should therefore act at your own discretion. Use of GraphHopper / OpenStreetMap is at your own risk. You are responsible for your own behavior and consequences at all times."));
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        builder.setPositiveButton(R.string.agree, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.putInt(getString(R.string.first_navigation_dialog_key), FIRST_NAVIGATION_DIALOG_VERSION);
+                editor.apply();
+                launchNavigationWithRoute();
             }
         });
 
@@ -547,6 +566,12 @@ public class NavigationLauncherActivity extends AppCompatActivity implements OnM
     private void launchNavigationWithRoute() {
         if (route == null) {
             Snackbar.make(mapView, R.string.error_route_not_available, Snackbar.LENGTH_SHORT).show();
+            return;
+        }
+
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        if (sharedPreferences.getInt(getString(R.string.first_navigation_dialog_key), -1) < FIRST_NAVIGATION_DIALOG_VERSION) {
+            showNavigationDialog();
             return;
         }
 
