@@ -21,6 +21,7 @@
     <string name="language_key" translatable="false">language</string>
     <string name="route_profile_key" translatable="false">route_profile</string>
     <string name="first_start_dialog_key" translatable="false">first_start_dialog</string>
+    <string name="first_navigation_dialog_key" translatable="false">first_navigation_dialog</string>
     <string name="default_locale" translatable="false">default_for_device</string>
     <string name="default_unit_type" translatable="false">default_for_device</string>
     <string name="current_night_mode" translatable="false">current_night_mode</string>
@@ -45,6 +46,7 @@
     <string name="fetch_solution">Fetch Solution</string>
     <string name="geocoding_search">Search</string>
     <string name="help_message_title">Getting Started</string>
+    <string name="legal_title">Legal Notice</string>
     <string name="agree">I agree</string>
     <string name="github">Contribute on Github</string>
 
