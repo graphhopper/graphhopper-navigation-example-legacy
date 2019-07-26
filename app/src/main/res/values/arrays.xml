@@ -32,12 +32,24 @@
     <string-array name="route_profile_array">
         <item>Driving</item>
         <item>Cycling</item>
+        <item>MTB</item>
+        <item>Racing bike</item>
         <item>Walking</item>
+        <item>Hike</item>
+        <item>Scooter</item>
+        <item>Small truck</item>
+        <item>Truck</item>
     </string-array>
 
     <string-array name="route_profile_values_array">
         <item>driving</item>
         <item>cycling</item>
+        <item>mtb</item>
+        <item>racingbike</item>
         <item>walking</item>
+        <item>hike</item>
+        <item>scooter</item>
+        <item>small_truck</item>
+        <item>truck</item>
     </string-array>
 </resources>
