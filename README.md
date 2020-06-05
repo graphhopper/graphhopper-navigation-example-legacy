@@ -2,6 +2,10 @@
 
 This Android example application showcases navigation based on instructions returned from the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper-navigation) component.
 
+## Try
+
+[Download from Google Play](https://play.google.com/store/apps/details?id=com.graphhopper.navigation.example).
+
 ## Features
 
 ![features](./files/graphhopper-navigation-example.png "Feature Screenshot")
