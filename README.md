@@ -1,6 +1,6 @@
 # GraphHopper Navigation Sample
 
-This Android example application showcases navigation based on instructions returned from the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper-navigation) component.
+This Android example application showcases navigation based on instructions returned from the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper/tree/master/navigation) component.
 
 ## Try
 
