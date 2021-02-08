@@ -16,6 +16,7 @@ This Android example application showcases navigation based on instructions retu
 - Load routes planned on [GraphHopper Maps](https://graphhopper.com/maps/)
 - Search for places using the [GraphHopper Geocoding API](https://graphhopper.com/api/1/docs/geocoding/)
 - 100% open source
+- no dependency to Mapbox i.e. no Mapbox contract required. The Mapbox key can be a random string.
 
 ## Getting Started
 
