@@ -1,7 +1,3 @@
-# GraphHopper Navigation Sample
-
-This Android example application showcases navigation based on instructions returned from the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper/tree/master/navigation) component.
-
 ## Update to MapLibre Navigation SDK for Android
 
 We recommend that you use the successor of the GraphHopper Navigation SDK, which is the [MapLibre Navigation SDK](https://github.com/maplibre/maplibre-navigation-android).
@@ -30,6 +26,10 @@ To build an example with MapLibre follow these steps:
 ---------
 
 # Legacy Readme
+
+## GraphHopper Navigation Sample
+
+This Android example application showcases navigation based on instructions returned from the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper/tree/master/navigation) component.
 
 ## Try
 
