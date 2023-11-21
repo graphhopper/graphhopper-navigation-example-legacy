@@ -2,6 +2,31 @@
 
 This Android example application showcases navigation based on instructions returned from the [GraphHopper Navigation](https://github.com/graphhopper/graphhopper/tree/master/navigation) component.
 
+## Update to MapLibre Navigation SDK for Android
+
+We recommend that you use the successor of the GraphHopper Navigation SDK, which is the [MapLibre Navigation SDK](https://github.com/maplibre/maplibre-navigation-android).
+
+To build an example with MapLibre follow these steps:
+
+ 1. Download IntelliJ with Android support (or IntelliJ Ultimate)
+ 2. git clone https://github.com/maplibre/maplibre-navigation-android
+ 3. Open the downloaded project in IntelliJ (this might take a while as it loads the dependencies)
+ 4. In app/src/main/res/values/developer-config.xml (created while the build) replace two lines with 'base_url' and 'mapbox_access_token' and set the correct GraphHopper GH_API_KEY:
+   ```xml
+   <string name="base_url" translatable="false">https://graphhopper.com/api/1/navigate/</string>
+   <string name="mapbox_access_token" translatable="false">pk.[GH_API_KEY]</string>
+   ```
+ 5. Additionally to the routing (provided by GraphHopper) you need a map tiles API from a different provider. In the same developer-config.xml enter the style URLs for e.g. mapilion:
+   ```xml
+   <string name="map_style_light" translatable="false">https://tiles.mapilion.com/assets/osm-bright/style.json?key=MAP_API_KEY</string>
+   <string name="map_style_dark"  translatable="false">https://tiles.mapilion.com/assets/dark-matter/style.json?key=MAP_API_KEY</string>
+   ```
+ 6. In NavigationUIActivity for NavigationRoute.builder uncomment `this.user("gh")` and `this.profile("car")`. (Do the same in the example "MockNavigationActivity".)
+ 7. You can now run the application on your Android device from IntelliJ (connect your device and a green triangle near your device name will show up)
+ 8. Click "Navigation UI" where it should show your location as a gray circle.
+ 9. Tap on the map to add a destination. It will now show the route on the map and a "Start Route" button will appear.
+ 10. Click the "Start Route" button and the turn by turn navigation will start.
+
 ## Try
 
 [Download from Google Play](https://play.google.com/store/apps/details?id=com.graphhopper.navigation.example).
