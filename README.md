@@ -27,6 +27,10 @@ To build an example with MapLibre follow these steps:
  9. Tap on the map to add a destination. It will now show the route on the map and a "Start Route" button will appear.
  10. Click the "Start Route" button and the turn by turn navigation will start.
 
+---------
+
+# Legacy Readme
+
 ## Try
 
 [Download from Google Play](https://play.google.com/store/apps/details?id=com.graphhopper.navigation.example).
